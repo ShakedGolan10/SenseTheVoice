@@ -9,8 +9,8 @@ class Settings(BaseSettings):
         "http://localhost:3000",  # NextJS frontend
         "http://localhost:8000",  # FastAPI docs
     ]
-    MODEL_NAME: str = "facebook/wav2vec2-base-960h"
-    MODEL_CACHE_DIR: str = "./model_cache"
+    MODEL_NAME: str
+    MODEL_CACHE_DIR: str
 
     class Config:
         env_file = ".env"
