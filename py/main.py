@@ -28,3 +28,9 @@ websocket_manager = WebSocketManager()
 
 # Mount WebSocket routes
 app.include_router(websocket_manager.router)
+
+# Add startup validation for environment variables
+@app.on_event("startup")
+async def startup_event():
+    if not settings.MODEL_NAME or not settings.MODEL_CACHE_DIR:
+        raise ValueError("Environment variables for model configuration are missing!")
