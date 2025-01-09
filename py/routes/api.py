@@ -1,12 +1,18 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from services import VoiceRecognitionService
-from schemas import response as TranscriptionResponse
+from services.VoiceRecognitionService import VoiceRecognitionService
+from schemas.response import TranscriptionResponse
 
 api_router = APIRouter()
-voice_service = VoiceRecognitionService()
 
-@api_router.post("/transcribe", response_model=TranscriptionResponse)
+# Initialize the service when needed, not at module level
+voice_service = None
+
+@api_router.post("/transcribe", response_model=TranscriptionResponse)  # Using the class directly
 async def transcribe_audio(audio_file: UploadFile = File(...)):
+    global voice_service
+    if voice_service is None:
+        voice_service = VoiceRecognitionService()
+        
     if not audio_file.content_type.startswith('audio/'):
         raise HTTPException(status_code=400, detail="File must be an audio file")
     

@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import get_settings
-from routes import api as api_router
-from services import WebSocketManager
+from routes.api import api_router
+from services.WebsocketManager import WebSocketManager
 
 settings = get_settings()
 
