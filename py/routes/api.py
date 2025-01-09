@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from services.voice_recognition import VoiceRecognitionService
-from schemas.response import TranscriptionResponse
+from services import VoiceRecognitionService
+from schemas import response as TranscriptionResponse
 
 api_router = APIRouter()
 voice_service = VoiceRecognitionService()
