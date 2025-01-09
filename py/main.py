@@ -34,3 +34,7 @@ app.include_router(websocket_manager.router)
 async def startup_event():
     if not settings.MODEL_NAME or not settings.MODEL_CACHE_DIR:
         raise ValueError("Environment variables for model configuration are missing!")
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Voice Recognition API, Server is live!"}
