@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from services.voice_recog import VoiceRecognitionService
 from schemas.response import TranscriptionResponse
 
@@ -8,7 +8,10 @@ api_router = APIRouter()
 voice_service = None
 
 @api_router.post("/transcribe", response_model=TranscriptionResponse)
-async def transcribe_audio(audio_file: UploadFile = File(...)):
+async def transcribe_audio(
+    audio_file: UploadFile = File(...),
+    language: str = Form(None)  # Accept language as a form parameter
+):
     global voice_service
     if voice_service is None:
         voice_service = VoiceRecognitionService()
@@ -20,7 +23,7 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
     try:
         # Read and transcribe the audio file
         audio_content = await audio_file.read()
-        transcription = await voice_service.transcribe(audio_content)
+        transcription = await voice_service.transcribe(audio_content, language=language)
         return TranscriptionResponse(text=transcription)
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))

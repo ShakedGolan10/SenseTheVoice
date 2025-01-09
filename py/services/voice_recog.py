@@ -1,39 +1,71 @@
-from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
-from config import get_settings
 import torch
-import io
-import soundfile as sf
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+import os
+
+os.environ["PATH"] += os.pathsep + "/usr/bin/ffmpeg"  # Replace with the actual path to ffmpeg
 
 class VoiceRecognitionService:
     def __init__(self):
-        self.settings = get_settings()
-        self.processor, self.model = self._load_model()
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
-    def _load_model(self):
-        # Load the processor and model using the environment variable from settings
-        processor = Wav2Vec2Processor.from_pretrained(self.settings.MODEL_NAME)
-        model = Wav2Vec2ForCTC.from_pretrained(self.settings.MODEL_NAME)
-        return processor, model
+        model_id = "openai/whisper-large-v3"
 
-    async def transcribe(self, audio_content: bytes) -> str:
-        # Convert bytes to audio array
-        audio_io = io.BytesIO(audio_content)
-        audio_array, sample_rate = sf.read(audio_io)
+        # Load the model and processor
+        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+            model_id, 
+            torch_dtype=torch_dtype, 
+            # low_cpu_mem_usage=True, 
+            use_safetensors=True
+        )
+        self.model.to(device)
 
-        # Ensure audio is mono and sampled at 16kHz
-        if len(audio_array.shape) > 1:
-            audio_array = audio_array.mean(axis=1)
-        if sample_rate != 16000:
-            raise ValueError("Audio sample rate must be 16kHz.")
+        self.processor = AutoProcessor.from_pretrained(model_id)
 
-        # Tokenize and process the input
-        input_values = self.processor(audio_array, return_tensors="pt", padding="longest").input_values
+        # Initialize the pipeline for transcription
+        self.pipe = pipeline(
+            "automatic-speech-recognition",
+            model=self.model,
+            tokenizer=self.processor.tokenizer,
+            feature_extractor=self.processor.feature_extractor,
+            torch_dtype=torch_dtype,
+            device=device
+        )
 
-        # Get the model logits
-        with torch.no_grad():
-            logits = self.model(input_values).logits
+    async def transcribe(self, audio_content: bytes, language: str = None, return_timestamps: bool = False):
+        """
+        Transcribe audio content to text.
 
-        # Decode the predicted IDs
-        predicted_ids = torch.argmax(logits, dim=-1)
-        transcription = self.processor.batch_decode(predicted_ids)[0]
-        return transcription
+        Args:
+            audio_content (bytes): The audio content in bytes.
+            language (str, optional): Language of the audio for improved accuracy.
+            return_timestamps (bool, optional): Whether to return timestamps.
+
+        Returns:
+            str: Transcribed text or detailed result if timestamps are enabled.
+        """
+        try:
+            # Save the audio content temporarily to a file since the pipeline expects file paths
+            temp_file = "temp_audio.wav"
+            with open(temp_file, "wb") as f:
+                f.write(audio_content)
+
+            # Prepare additional arguments for the pipeline
+            generate_kwargs = {}
+            if language:
+                generate_kwargs["language"] = language
+
+            if return_timestamps:
+                generate_kwargs["return_timestamps"] = "word"
+
+            # Perform transcription
+            result = self.pipe(temp_file, generate_kwargs=generate_kwargs)
+
+            # Clean up the temporary file
+            import os
+            os.remove(temp_file)
+
+            return result if return_timestamps else result["text"]
+
+        except Exception as e:
+            raise ValueError(f"Failed to transcribe audio: {str(e)}")
