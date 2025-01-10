@@ -9,7 +9,7 @@ class Settings(BaseSettings):
         "http://localhost:3000",  # NextJS frontend
         "http://localhost:8000",  # FastAPI docs
     ]
-    MODEL_NAME: str
+    MODEL_NAME_1: str = 'openai/whisper-large-v3'
     MODEL_CACHE_DIR: str
 
     class Config:

@@ -31,9 +31,7 @@ app.include_router(websocket_manager.router)
 
 # Add startup validation for environment variables
 @app.on_event("startup")
-async def startup_event():
-    if not settings.MODEL_NAME or not settings.MODEL_CACHE_DIR:
-        raise ValueError("Environment variables for model configuration are missing!")
+async def startup_event(): print('Startup successful')
 
 @app.get("/")
 def read_root():
