@@ -1,37 +1,29 @@
-# from transformers import AutoTokenizer, AutoModelForCausalLM
-# import torch
+from transformers import pipeline
 
-# class GrammarCorrectionService:
-#     def __init__(self):
-#         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#         print(f"Using device: {self.device}")
+class GrammarCorrectionService:
+    def __init__(self):
+        # Initialize the pipeline with the Grammar Correction T5 Model
+        self.model_name = "hassaanik/grammar-correction-model"
+        self.pipeline = pipeline(
+            task="text2text-generation", 
+            model=self.model_name
+        )
+        print("GrammarCorrectionService initialized with model:", self.model_name)
 
-#         # Initialize the tokenizer and model
-#         self.model_name = 'Salesforce/ctrl'
-#         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-#         self.model = AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device)
+    def analyze_text(self, text: str) -> str:
+        # Use the model pipeline to generate corrected text
+        result = self.pipeline(
+            text, 
+            num_beams=5,  # Beam search for quality outputs
+            no_repeat_ngram_size=2  # Avoid repeated phrases
+        )
+        corrected_text = result[0]['generated_text']
+        print(corrected_text)
+        return corrected_text
 
-#     def analyze_text(self, text: str) -> str:
-#         # Define the control code for grammar correction
-#         control_code = 'Fix grammar mistakes in the text: '
-#         prompt = control_code + text
-
-#         # Tokenize the input
-#         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-
-#         # Generate the corrected text
-#         outputs = self.model.generate(
-#             **inputs,
-#             max_length=512,
-#             num_return_sequences=1,
-#             top_k=50,
-#             top_p=0.95,
-#             temperature=0.7,
-#             no_repeat_ngram_size=2,
-#             do_sample=True,
-#             pad_token_id=self.tokenizer.eos_token_id
-#         )
-
-#         # Decode the generated text
-#         corrected_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-#         return corrected_text[len(control_code):]  # Remove the control code from the output
+# Example usage
+if __name__ == "__main__":
+    service = GrammarCorrectionService()
+    input_text = "They is going to spent time together."
+    corrected_output = service.analyze_text(input_text)
+    print("Corrected text:", corrected_output)
