@@ -14,8 +14,8 @@ Welcome to the **Grammar Correction and Transcription Service**! This Python-bas
 
 ```json
 {
-  "transcription": " I am learn to walk again after high. Have a ninja by a car accident.",
-  "fixed_text": "I am learning to walk again after high school. I was a ninja by "
+  "transcription": " I am learn to walk.",
+  "fixed_text": "I am learning to walk."
 }
 ```
 
